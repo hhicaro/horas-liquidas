@@ -212,7 +212,7 @@ input.dark::placeholder{color:var(--text3)}
     <button class="sb-btn" id="sb1" onclick="showView('dash')" title="Dashboard">◫</button>
     <button class="sb-btn" id="sb2" onclick="showView('pdf')" title="Abrir PDF">⊞</button>
     <div class="sb-sep"></div>
-    <button class="sb-btn" onclick="toggleWidget()" title="Widget flutuante" id="sb-wgt">◉</button>
+    
   </div>
 
   <!-- MAIN -->
@@ -409,7 +409,6 @@ let S={
   history:[],dur:25,meta:0
 };
 let running=false,isBreak=false,secs=25*60,timer=null,sessStart=null;
-let widgetVisible=true;
 
 // ─── DEFAULT SUBJECTS (from ICS) ─────────────────────────
 const DEFAULT_SUBJECTS=[
@@ -771,31 +770,9 @@ function showView(v){
 }
 
 // ─── WIDGET DRAG ──────────────────────────────────────────
-function toggleWidget(){
-  widgetVisible=!widgetVisible;
-  document.getElementById('widget').style.display=widgetVisible?'block':'none';
-  document.getElementById('show-widget-btn').style.display=widgetVisible?'none':'block';
-}
 
-(function(){
-  const el=document.getElementById('widget');
-  let dx=0,dy=0,mx=0,my=0;
-  el.addEventListener('mousedown',e=>{
-    if(e.target.tagName==='BUTTON')return;
-    e.preventDefault();
-    mx=e.clientX;my=e.clientY;
-    const r=el.getBoundingClientRect();
-    dx=e.clientX-r.left;dy=e.clientY-r.top;
-    document.addEventListener('mousemove',onMove);
-    document.addEventListener('mouseup',onUp);
-  });
-  function onMove(e){
-    el.style.right='auto';el.style.bottom='auto';
-    el.style.left=(e.clientX-dx)+'px';
-    el.style.top=(e.clientY-dy)+'px';
-  }
-  function onUp(){document.removeEventListener('mousemove',onMove);document.removeEventListener('mouseup',onUp);}
-})();
+
+// drag do widget removido (widget agora é da extensão)
 
 // ─── PDF ──────────────────────────────────────────────────
 let pdfDoc=null,pdfPage=1,pdfRendering=false;
