@@ -190,7 +190,9 @@ input.dark::placeholder{color:var(--text3)}
 .w-svg{width:130px;height:130px;transform:rotate(-90deg)}
 .w-track{fill:none;stroke:#1a1a1f;stroke-width:8}
 .w-prog{fill:none;stroke:var(--red);stroke-width:8;stroke-linecap:round;stroke-dasharray:345;stroke-dashoffset:0;transition:stroke-dashoffset 1s linear,stroke .3s}
-.w-prog.break-w{stroke:var(--blue)}
+.w-prog.break-w{stroke:var(--green)}
+.w-time.break-color{color:var(--green)}
+.w-lbl.break-color{color:rgba(0,230,118,.6)}
 .w-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center}
 .w-time{font-family:var(--mono);font-size:22px;font-weight:400;color:var(--text);line-height:1;letter-spacing:-1px}
 .w-label{font-family:var(--mono);font-size:8px;letter-spacing:.14em;color:var(--text3);text-transform:uppercase;margin-top:2px}
@@ -321,6 +323,30 @@ input.dark::placeholder{color:var(--text3)}
             <div style="flex:1">
               <div class="sec-title" style="margin-bottom:8px">Últimas sessões</div>
               <div class="hist-list" id="hist-list"></div>
+            </div>
+            <hr class="divider">
+            <div>
+              <div class="sec-title" style="margin-bottom:10px">Mini-timer</div>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+                <div style="position:relative;width:100px;height:100px">
+                  <div style="position:absolute;inset:0;border-radius:50%;background:rgba(14,14,18,.95);border:1px solid var(--border)"></div>
+                  <svg style="width:100px;height:100px;transform:rotate(-90deg);display:block" viewBox="0 0 100 100">
+                    <circle fill="none" stroke="#1a1a1f" stroke-width="7" cx="50" cy="50" r="42"/>
+                    <circle id="mini-ring" fill="none" stroke="var(--red)" stroke-width="7" stroke-linecap="round"
+                      cx="50" cy="50" r="42" stroke-dasharray="264" stroke-dashoffset="0"
+                      style="transition:stroke-dashoffset 1s linear,stroke .3s"/>
+                  </svg>
+                  <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center">
+                    <div id="mini-time" style="font-family:var(--mono);font-size:18px;font-weight:400;color:var(--text);line-height:1;letter-spacing:-0.5px">25:00</div>
+                    <div id="mini-lbl" style="font-family:var(--mono);font-size:7px;letter-spacing:.14em;color:var(--text3);text-transform:uppercase;margin-top:2px">PAUSADO</div>
+                  </div>
+                </div>
+                <div style="display:flex;gap:6px">
+                  <button class="w-btn red" id="mini-play" onclick="toggleTimer()" style="width:28px;height:28px">▶</button>
+                  <button class="w-btn" onclick="skipPhase()" style="width:28px;height:28px" title="Pular fase">↷</button>
+                  <button class="w-btn" onclick="resetTimer()" style="width:28px;height:28px" title="Resetar">↺</button>
+                </div>
+              </div>
             </div>
             <div style="display:flex;flex-direction:column;gap:6px;margin-top:auto">
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
@@ -502,11 +528,11 @@ function renderClock(){
   const el=document.getElementById('ring');
   if(el){
     el.style.strokeDashoffset=502*(1-pct/100);
-    el.className='ring-progress '+(isBreak?'break-ring':'focus');
+    el.className='ring-progress '+(isBreak?'break-ring':'focus');el.style.stroke=isBreak?'var(--green)':'var(--red)';
   }
 
   const rt=document.getElementById('ring-time');
-  if(rt){rt.textContent=fmtClock(secs);rt.className='ring-time'+(running&&!isBreak?' running':isBreak&&running?' break':'');}
+  if(rt){rt.textContent=fmtClock(secs);rt.style.color=running&&isBreak?'var(--green)':running&&!isBreak?'var(--red)':'var(--text)';}
 
   const rl=document.getElementById('ring-lbl');
   if(rl){rl.textContent=running?(isBreak?'PAUSA':'FOCUS'):'PAUSADO';rl.className='ring-label'+(running?' running':'');}
@@ -526,14 +552,23 @@ function renderClock(){
 
   // widget ring (circumference ~345 for r=55)
   const wr=document.getElementById('w-ring');
-  if(wr){wr.style.strokeDashoffset=345*(1-pct/100);wr.className='w-prog '+(isBreak?'break-w':'focus');}
+  if(wr){wr.style.strokeDashoffset=345*(1-pct/100);wr.style.stroke=isBreak?'var(--green)':'var(--red)';}
   const wt=document.getElementById('w-time');
-  if(wt) wt.textContent=fmtClock(secs);
+  if(wt){wt.textContent=fmtClock(secs);wt.style.color=running&&isBreak?'var(--green)':running?'var(--red)':'var(--text)';}
   const wl=document.getElementById('w-lbl');
-  if(wl) wl.textContent=running?(isBreak?'BREAK':'FOCUS'):'PAUSADO';
+  if(wl){wl.textContent=running?(isBreak?'DESCANSO':'FOCUS'):'PAUSADO';wl.style.color=running&&isBreak?'rgba(0,230,118,.7)':running?'rgba(255,82,82,.7)':'var(--text3)';}
 
   const wp=document.getElementById('w-btn-play');
   if(wp) wp.textContent=running?'⏸':'▶';
+  // mini-timer embutido
+  const mr=document.getElementById('mini-ring');
+  if(mr){mr.style.strokeDashoffset=264*(1-pct/100);mr.style.stroke=isBreak?'var(--green)':'var(--red)';}
+  const mt=document.getElementById('mini-time');
+  if(mt){mt.textContent=fmtClock(secs);mt.style.color=running&&isBreak?'var(--green)':running?'var(--red)':'var(--text)';}
+  const ml=document.getElementById('mini-lbl');
+  if(ml){ml.textContent=running?(isBreak?'DESCANSO':'FOCUS'):'PAUSADO';ml.style.color=running&&isBreak?'rgba(0,230,118,.6)':running?'rgba(255,82,82,.6)':'var(--text3)';}
+  const mp=document.getElementById('mini-play');
+  if(mp) mp.textContent=running?'⏸':'▶';
 }
 
 // ─── RENDER STATS ─────────────────────────────────────────
