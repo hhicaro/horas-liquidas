@@ -601,10 +601,13 @@ function renderHistory(){
 
 // ─── RENDER DASHBOARD ─────────────────────────────────────
 function renderDashboard(){
-  document.getElementById('d-total').textContent=fmt(S.totalMin);
-  document.getElementById('d-total-s').textContent=S.totalSessions+' sessões';
-  document.getElementById('d-hoje').textContent=fmt(S.todayMin);
-  document.getElementById('d-hoje-s').textContent=S.todayPomos+' pomodoros';
+  // adiciona minutos da sessão corrente ao display (sem salvar)
+  const liveMin=(running&&sessStart&&!isBreak)?Math.floor((Date.now()-sessStart)/60000)-(S._lastRecMin||0):0;
+  const liveLabel=liveMin>0?' +'+liveMin+'min ao vivo':'';
+  document.getElementById('d-total').textContent=fmt(S.totalMin+liveMin);
+  document.getElementById('d-total-s').textContent=S.totalSessions+' sessões'+liveLabel;
+  document.getElementById('d-hoje').textContent=fmt(S.todayMin+liveMin);
+  document.getElementById('d-hoje-s').textContent=S.todayPomos+' pomodoros'+liveLabel;
   const meta=S.meta||0;
   const pct=meta>0?Math.min(Math.round(S.todayMin/meta*100),999):0;
   const mpEl=document.getElementById('d-meta-pct');
@@ -613,17 +616,20 @@ function renderDashboard(){
   const dias=daysUntil('2026-06-14');
   document.getElementById('d-dias').textContent=dias;
 
-  const max=Math.max(...S.subjects.map(s=>s.min),1);
-  const sorted=[...S.subjects].sort((a,b)=>b.min-a.min);
+  const curSubjIdx=running&&sessStart&&!isBreak?parseInt(document.getElementById('cur-subj').value)||0:-1;
+  const liveMinForSubj=(running&&sessStart&&!isBreak)?Math.floor((Date.now()-sessStart)/60000)-(S._lastRecMin||0):0;
+  const subjWithLive=S.subjects.map((s,i)=>({...s,min:s.min+(i===curSubjIdx?liveMinForSubj:0)}));
+  const max=Math.max(...subjWithLive.map(s=>s.min),1);
+  const sorted=[...subjWithLive].map((s,i)=>({...s,_i:i})).sort((a,b)=>b.min-a.min);
   document.getElementById('d-bars').innerHTML=sorted.map(s=>{
-    const oi=S.subjects.findIndex(x=>x.name===s.name);
-    const col=C[oi%C.length];
+    const col=C[s._i%C.length];
     const pct=Math.round(s.min/max*100);
-    return `<div class="brow">
-      <span class="bname">${s.name}</span>
-      <div class="btrack"><div class="bfill" style="width:${pct}%;background:${col}"></div></div>
-      <span class="btime">${fmt(s.min)}</span>
-    </div>`;
+    const isLive=s._i===curSubjIdx&&liveMinForSubj>0;
+    return '<div class="brow">' +
+      '<span class="bname">'+s.name+(isLive?' <span style="font-size:9px;color:var(--green);font-family:var(--mono)">● AO VIVO</span>':'')+'</span>' +
+      '<div class="btrack"><div class="bfill" style="width:'+pct+'%;background:'+col+(isLive?';box-shadow:0 0 6px '+col:'')+'"></div></div>' +
+      '<span class="btime">'+fmt(s.min)+'</span>' +
+    '</div>';
   }).join('');
 
   const tbody=document.getElementById('d-hist');
@@ -654,10 +660,14 @@ function record(mins){
 function toggleTimer(){
   if(running){
     clearInterval(timer);running=false;
-    if(sessStart&&!isBreak){const e=Math.floor((Date.now()-sessStart)/60000);if(e>0)record(e);}
+    if(sessStart&&!isBreak){
+      const elapsedSec=Math.floor((Date.now()-sessStart)/1000);
+      const e=elapsedSec>=30?Math.max(1,Math.round(elapsedSec/60)):0;
+      if(e>0)record(e);
+    }
     sessStart=null;
   }else{
-    running=true;sessStart=Date.now();
+    running=true;sessStart=Date.now();S._lastRecMin=0;
     timer=setInterval(tick,1000);
   }
   renderClock();
@@ -665,27 +675,45 @@ function toggleTimer(){
 
 function tick(){
   secs--;
+  if(!isBreak&&sessStart){
+    // registra 1 min a cada minuto completo (incremental, sem esperar pausar)
+    const elapsed=Math.floor((Date.now()-sessStart)/60000);
+    if(elapsed>0&&elapsed>S._lastRecMin){
+      record(1);
+      S._lastRecMin=elapsed;
+    }
+  }
   if(secs<=0){
     clearInterval(timer);running=false;
     if(!isBreak){
-      record(S.dur);sessStart=null;
+      // já registrou os minutos incrementalmente, registra o restante se houver
+      const totalElapsed=Math.floor((Date.now()-sessStart)/60000);
+      const remaining=S.dur-(S._lastRecMin||0);
+      if(remaining>0)record(remaining);
+      S._lastRecMin=0;sessStart=null;
       isBreak=true;secs=5*60;
-      setTimeout(()=>{running=true;sessStart=Date.now();timer=setInterval(tick,1000);renderClock();},500);
-    }else{isBreak=false;secs=S.dur*60;sessStart=null;}
+      setTimeout(()=>{running=true;sessStart=Date.now();S._lastRecMin=0;timer=setInterval(tick,1000);renderClock();},500);
+    }else{isBreak=false;secs=S.dur*60;sessStart=null;S._lastRecMin=0;}
   }
   renderClock();
 }
 
 function skipPhase(){
   clearInterval(timer);
-  if(running&&sessStart&&!isBreak){const e=Math.floor((Date.now()-sessStart)/60000);if(e>0)record(e);}
+  if(running&&sessStart&&!isBreak){
+    const alreadyRec=S._lastRecMin||0;
+    const totalElapsed=Math.floor((Date.now()-sessStart)/60000);
+    const remaining=totalElapsed-alreadyRec;
+    if(remaining>0)record(remaining);
+  }
+  S._lastRecMin=0;
   running=false;sessStart=null;
   isBreak=!isBreak;secs=(isBreak?5:S.dur)*60;
   renderClock();
 }
 
 function resetTimer(){
-  clearInterval(timer);running=false;isBreak=false;sessStart=null;secs=S.dur*60;renderClock();
+  clearInterval(timer);running=false;isBreak=false;sessStart=null;S._lastRecMin=0;secs=S.dur*60;renderClock();
 }
 
 function setDur(d){
