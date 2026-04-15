@@ -322,7 +322,17 @@ input.dark::placeholder{color:var(--text3)}
               <div class="sec-title" style="margin-bottom:8px">Últimas sessões</div>
               <div class="hist-list" id="hist-list"></div>
             </div>
-            <button class="reset-lnk" onclick="resetAll()">Zerar todos os dados</button>
+            <div style="display:flex;flex-direction:column;gap:6px;margin-top:auto">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+                <button class="btn" style="font-size:10px;padding:7px 8px" onclick="exportExcel()" title="Exportar histórico para Excel">↓ Excel</button>
+                <button class="btn" style="font-size:10px;padding:7px 8px" onclick="exportBackup()" title="Salvar backup JSON">↓ Backup</button>
+              </div>
+              <label class="btn" style="font-size:10px;padding:7px 8px;text-align:center;cursor:pointer" title="Restaurar backup">
+                ↑ Restaurar
+                <input type="file" accept=".json" id="import-inp" style="display:none" onchange="importBackup(event)"/>
+              </label>
+              <button class="reset-lnk" onclick="resetAll()">Zerar todos os dados</button>
+            </div>
           </div>
         </div>
       </div>
@@ -841,6 +851,65 @@ dz.addEventListener('drop',e=>{
     openPDF({target:inp});
   }
 });
+
+// ─── EXPORT EXCEL ────────────────────────────────────────
+function exportExcel(){
+  // Build CSV with BOM for Excel UTF-8
+  const bom='﻿';
+  let csv='Matéria;Duração (min);Horário\n';
+  if(S.history&&S.history.length){
+    [...S.history].reverse().forEach(h=>{
+      csv+=`"${h.subj}";${h.dur};"${h.time}"\n`;
+    });
+  }
+  csv+='\n';
+  csv+='Resumo por matéria\n';
+  csv+='Matéria;Total (min);Total formatado\n';
+  S.subjects.forEach(s=>{
+    csv+=`"${s.name}";${s.min};"${fmt(s.min)}"\n`;
+  });
+  csv+='\n';
+  csv+=`Total geral;${S.totalMin};"${fmt(S.totalMin)}"\n`;
+  csv+=`Sessões totais;${S.totalSessions};\n`;
+  const blob=new Blob([bom+csv],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  const d=new Date();
+  a.download='horas_liquidas_'+d.toISOString().slice(0,10)+'.csv';
+  a.click();URL.revokeObjectURL(a.href);
+}
+
+// ─── BACKUP JSON ──────────────────────────────────────────
+function exportBackup(){
+  const data=JSON.stringify({...S,exportedAt:new Date().toISOString()},null,2);
+  const blob=new Blob([data],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  const d=new Date();
+  a.download='backup_horas_'+d.toISOString().slice(0,10)+'.json';
+  a.click();URL.revokeObjectURL(a.href);
+}
+
+function importBackup(e){
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    try{
+      const data=JSON.parse(ev.target.result);
+      if(!data.subjects||!Array.isArray(data.subjects)){alert('Arquivo inválido.');return;}
+      if(!confirm('Isso vai substituir todos os dados atuais pelo backup. Confirmar?'))return;
+      clearInterval(timer);running=false;isBreak=false;sessStart=null;
+      S={...S,...data};
+      secs=S.dur*60;
+      save();
+      if(S.appTitle){const t=document.getElementById('app-title');if(t)t.textContent=S.appTitle;}
+      renderClock();renderStats();renderSubjects();renderHistory();
+      alert('Backup restaurado com sucesso!');
+    }catch(err){alert('Erro ao ler o arquivo: '+err.message);}
+  };
+  reader.readAsText(file);
+  e.target.value='';
+}
 
 // ─── DATE ─────────────────────────────────────────────────
 function updateDate(){
