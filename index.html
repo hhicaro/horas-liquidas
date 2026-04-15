@@ -98,6 +98,15 @@ select.dark:focus{border-color:var(--border2)}
 .dur-btn:hover{color:var(--text2)}
 .dur-btn.act{border-color:rgba(255,82,82,.3);color:var(--red);background:rgba(255,82,82,.07)}
 
+/* ── RING CONTROLS ── */
+.ring-controls{display:flex;align-items:center;justify-content:center;gap:16px;margin:16px 0 4px}
+.ring-play-btn{width:52px;height:52px;border-radius:50%;background:rgba(255,82,82,.1);border:2px solid rgba(255,82,82,.4);color:var(--red);font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.ring-play-btn:hover{background:rgba(255,82,82,.2);transform:scale(1.06)}
+.ring-play-btn.break-btn{background:rgba(0,230,118,.1);border-color:rgba(0,230,118,.4);color:var(--green)}
+.ring-play-btn.break-btn:hover{background:rgba(0,230,118,.2)}
+.ring-ctrl-btn{width:36px;height:36px;border-radius:50%;background:var(--bg4);border:1px solid var(--border2);color:var(--text3);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.ring-ctrl-btn:hover{background:var(--bg5);color:var(--text)}
+
 /* subjects panel */
 .subj-panel{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:20px}
 .sec-title{font-family:var(--mono);font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--text3);margin-bottom:12px;display:flex;align-items:center;justify-content:space-between}
@@ -268,14 +277,14 @@ input.dark::placeholder{color:var(--text3)}
                   <div class="ring-label" id="ring-lbl">PAUSADO</div>
                 </div>
               </div>
+              <div class="ring-controls">
+                <button class="ring-ctrl-btn" id="ring-reset" onclick="resetTimer()" title="Resetar">↺</button>
+                <button class="ring-play-btn" id="btn-start" onclick="toggleTimer()">▶</button>
+                <button class="ring-ctrl-btn" id="ring-skip" onclick="skipPhase()" title="Pular fase">↷</button>
+              </div>
               <div class="subj-sel-row">
                 <label>Matéria</label>
                 <select class="dark" id="cur-subj"></select>
-              </div>
-              <div class="btn-row">
-                <button class="btn go active-start" id="btn-start" onclick="toggleTimer()">Iniciar</button>
-                <button class="btn" onclick="skipPhase()">Pular fase</button>
-                <button class="btn" onclick="resetTimer()">Resetar</button>
               </div>
               <div class="dur-row">
                 <button class="dur-btn act" id="d25" onclick="setDur(25)">25 min</button>
@@ -324,30 +333,7 @@ input.dark::placeholder{color:var(--text3)}
               <div class="sec-title" style="margin-bottom:8px">Últimas sessões</div>
               <div class="hist-list" id="hist-list"></div>
             </div>
-            <hr class="divider">
-            <div>
-              <div class="sec-title" style="margin-bottom:10px">Mini-timer</div>
-              <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
-                <div style="position:relative;width:100px;height:100px">
-                  <div style="position:absolute;inset:0;border-radius:50%;background:rgba(14,14,18,.95);border:1px solid var(--border)"></div>
-                  <svg style="width:100px;height:100px;transform:rotate(-90deg);display:block" viewBox="0 0 100 100">
-                    <circle fill="none" stroke="#1a1a1f" stroke-width="7" cx="50" cy="50" r="42"/>
-                    <circle id="mini-ring" fill="none" stroke="var(--red)" stroke-width="7" stroke-linecap="round"
-                      cx="50" cy="50" r="42" stroke-dasharray="264" stroke-dashoffset="0"
-                      style="transition:stroke-dashoffset 1s linear,stroke .3s"/>
-                  </svg>
-                  <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center">
-                    <div id="mini-time" style="font-family:var(--mono);font-size:18px;font-weight:400;color:var(--text);line-height:1;letter-spacing:-0.5px">25:00</div>
-                    <div id="mini-lbl" style="font-family:var(--mono);font-size:7px;letter-spacing:.14em;color:var(--text3);text-transform:uppercase;margin-top:2px">PAUSADO</div>
-                  </div>
-                </div>
-                <div style="display:flex;gap:6px">
-                  <button class="w-btn red" id="mini-play" onclick="toggleTimer()" style="width:28px;height:28px">▶</button>
-                  <button class="w-btn" onclick="skipPhase()" style="width:28px;height:28px" title="Pular fase">↷</button>
-                  <button class="w-btn" onclick="resetTimer()" style="width:28px;height:28px" title="Resetar">↺</button>
-                </div>
-              </div>
-            </div>
+
             <div style="display:flex;flex-direction:column;gap:6px;margin-top:auto">
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
                 <button class="btn" style="font-size:10px;padding:7px 8px" onclick="exportExcel()" title="Exportar histórico para Excel">↓ Excel</button>
@@ -548,7 +534,10 @@ function renderClock(){
   if(ptxt) ptxt.textContent=isBreak?'Pausa — 5 min':'Foco — '+S.dur+' min';
 
   const bs=document.getElementById('btn-start');
-  if(bs){bs.textContent=running?'Pausar':'Iniciar';bs.className=running?'btn go':'btn go active-start';}
+  if(bs){
+    bs.textContent=running?'⏸':'▶';
+    bs.className='ring-play-btn'+(isBreak?' break-btn':'');
+  }
 
   // widget ring (circumference ~345 for r=55)
   const wr=document.getElementById('w-ring');
@@ -560,15 +549,7 @@ function renderClock(){
 
   const wp=document.getElementById('w-btn-play');
   if(wp) wp.textContent=running?'⏸':'▶';
-  // mini-timer embutido
-  const mr=document.getElementById('mini-ring');
-  if(mr){mr.style.strokeDashoffset=264*(1-pct/100);mr.style.stroke=isBreak?'var(--green)':'var(--red)';}
-  const mt=document.getElementById('mini-time');
-  if(mt){mt.textContent=fmtClock(secs);mt.style.color=running&&isBreak?'var(--green)':running?'var(--red)':'var(--text)';}
-  const ml=document.getElementById('mini-lbl');
-  if(ml){ml.textContent=running?(isBreak?'DESCANSO':'FOCUS'):'PAUSADO';ml.style.color=running&&isBreak?'rgba(0,230,118,.6)':running?'rgba(255,82,82,.6)':'var(--text3)';}
-  const mp=document.getElementById('mini-play');
-  if(mp) mp.textContent=running?'⏸':'▶';
+
 }
 
 // ─── RENDER STATS ─────────────────────────────────────────
