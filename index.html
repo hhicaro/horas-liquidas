@@ -98,14 +98,13 @@ select.dark:focus{border-color:var(--border2)}
 .dur-btn:hover{color:var(--text2)}
 .dur-btn.act{border-color:rgba(255,82,82,.3);color:var(--red);background:rgba(255,82,82,.07)}
 
-/* ── RING CONTROLS ── */
-.ring-controls{display:flex;align-items:center;justify-content:center;gap:16px;margin:16px 0 4px}
-.ring-play-btn{width:52px;height:52px;border-radius:50%;background:rgba(255,82,82,.1);border:2px solid rgba(255,82,82,.4);color:var(--red);font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s}
-.ring-play-btn:hover{background:rgba(255,82,82,.2);transform:scale(1.06)}
-.ring-play-btn.break-btn{background:rgba(0,230,118,.1);border-color:rgba(0,230,118,.4);color:var(--green)}
-.ring-play-btn.break-btn:hover{background:rgba(0,230,118,.2)}
-.ring-ctrl-btn{width:36px;height:36px;border-radius:50%;background:var(--bg4);border:1px solid var(--border2);color:var(--text3);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
-.ring-ctrl-btn:hover{background:var(--bg5);color:var(--text)}
+/* ── RING ROW ── */
+.ring-row{display:flex;align-items:center;justify-content:center;gap:16px;margin-bottom:4px}
+.ring-side-btn{width:38px;height:38px;border-radius:50%;background:var(--bg4);border:1px solid var(--border2);color:var(--text3);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0}
+.ring-side-btn:hover{background:var(--bg5);color:var(--text)}
+.ring-wrap{cursor:pointer}
+.ring-wrap:hover .ring-play-icon{opacity:1!important}
+.ring-play-icon{font-size:28px;color:var(--red);margin-top:6px;opacity:0;transition:opacity .2s;line-height:1}
 
 /* subjects panel */
 .subj-panel{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:20px}
@@ -192,28 +191,6 @@ input.dark::placeholder{color:var(--text3)}
 .pdf-placeholder{height:100%;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px}
 .pdf-placeholder-text{font-family:var(--mono);font-size:11px;color:var(--text3);letter-spacing:.08em}
 
-/* ── FLOATING WIDGET ── */
-.widget{position:fixed;bottom:24px;right:24px;z-index:9990;user-select:none;cursor:grab}
-.widget:active{cursor:grabbing}
-.widget-inner{position:relative;width:130px;height:130px}
-.w-svg{width:130px;height:130px;transform:rotate(-90deg)}
-.w-track{fill:none;stroke:#1a1a1f;stroke-width:8}
-.w-prog{fill:none;stroke:var(--red);stroke-width:8;stroke-linecap:round;stroke-dasharray:345;stroke-dashoffset:0;transition:stroke-dashoffset 1s linear,stroke .3s}
-.w-prog.break-w{stroke:var(--green)}
-.w-time.break-color{color:var(--green)}
-.w-lbl.break-color{color:rgba(0,230,118,.6)}
-.w-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center}
-.w-time{font-family:var(--mono);font-size:22px;font-weight:400;color:var(--text);line-height:1;letter-spacing:-1px}
-.w-label{font-family:var(--mono);font-size:8px;letter-spacing:.14em;color:var(--text3);text-transform:uppercase;margin-top:2px}
-.widget-bg{position:absolute;inset:0;border-radius:50%;background:rgba(14,14,18,.92);backdrop-filter:blur(8px);border:1px solid var(--border)}
-.w-controls{display:flex;gap:5px;justify-content:center;margin-top:6px}
-.w-btn{width:26px;height:26px;border-radius:50%;border:1px solid var(--border2);background:var(--bg4);color:var(--text2);cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center;transition:all .15s}
-.w-btn:hover{background:var(--bg5);color:var(--text)}
-.w-btn.red{background:rgba(255,82,82,.1);border-color:rgba(255,82,82,.3);color:var(--red)}
-.w-hide-btn{position:absolute;top:-6px;right:-6px;width:18px;height:18px;border-radius:50%;background:var(--bg4);border:1px solid var(--border2);color:var(--text3);font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:1}
-.w-hide-btn:hover{color:var(--text)}
-.show-widget-btn{position:fixed;bottom:24px;right:24px;z-index:9990;font-family:var(--mono);font-size:10px;letter-spacing:.1em;padding:7px 14px;border-radius:100px;border:1px solid var(--border2);background:var(--bg4);color:var(--text3);cursor:pointer;display:none;transition:all .15s}
-.show-widget-btn:hover{color:var(--text);border-color:rgba(255,82,82,.3);color:var(--red)}
 
 @media(max-width:720px){
   .shell{grid-template-columns:1fr}
@@ -267,20 +244,20 @@ input.dark::placeholder{color:var(--text3)}
                 <div class="pdot-anim" id="pdot"></div>
                 <span id="phase-txt">Foco — 25 min</span>
               </div>
-              <div class="ring-wrap">
-                <svg class="ring-svg" viewBox="0 0 180 180">
-                  <circle class="ring-track" cx="90" cy="90" r="80"/>
-                  <circle class="ring-progress focus" id="ring" cx="90" cy="90" r="80"/>
-                </svg>
-                <div class="ring-center">
-                  <div class="ring-time" id="ring-time">25:00</div>
-                  <div class="ring-label" id="ring-lbl">PAUSADO</div>
+              <div class="ring-row">
+                <button class="ring-side-btn" id="ring-reset" onclick="resetTimer()" title="Resetar">↺</button>
+                <div class="ring-wrap" id="ring-clickable" onclick="toggleTimer()" title="Clique para iniciar/pausar">
+                  <svg class="ring-svg" viewBox="0 0 180 180">
+                    <circle class="ring-track" cx="90" cy="90" r="80"/>
+                    <circle class="ring-progress focus" id="ring" cx="90" cy="90" r="80"/>
+                  </svg>
+                  <div class="ring-center">
+                    <div class="ring-time" id="ring-time">25:00</div>
+                    <div class="ring-label" id="ring-lbl">PAUSADO</div>
+                    <div class="ring-play-icon" id="ring-play-icon">▶</div>
+                  </div>
                 </div>
-              </div>
-              <div class="ring-controls">
-                <button class="ring-ctrl-btn" id="ring-reset" onclick="resetTimer()" title="Resetar">↺</button>
-                <button class="ring-play-btn" id="btn-start" onclick="toggleTimer()">▶</button>
-                <button class="ring-ctrl-btn" id="ring-skip" onclick="skipPhase()" title="Pular fase">↷</button>
+                <button class="ring-side-btn" id="ring-skip" onclick="skipPhase()" title="Pular fase">↷</button>
               </div>
               <div class="subj-sel-row">
                 <label>Matéria</label>
@@ -417,27 +394,6 @@ input.dark::placeholder{color:var(--text3)}
   </div>
 </div>
 
-<!-- FLOATING WIDGET -->
-<div class="widget" id="widget">
-  <div class="widget-inner">
-    <div class="widget-bg"></div>
-    <svg class="w-svg" viewBox="0 0 130 130">
-      <circle class="w-track" cx="65" cy="65" r="55"/>
-      <circle class="w-prog focus" id="w-ring" cx="65" cy="65" r="55"/>
-    </svg>
-    <div class="w-center">
-      <div class="w-time" id="w-time">25:00</div>
-      <div class="w-label" id="w-lbl">FOCUS</div>
-    </div>
-    <button class="w-hide-btn" onclick="toggleWidget()">×</button>
-  </div>
-  <div class="w-controls">
-    <button class="w-btn red" id="w-btn-play" onclick="toggleTimer()" title="Play/Pause">▶</button>
-    <button class="w-btn" onclick="skipPhase()" title="Pular">↷</button>
-    <button class="w-btn" onclick="showView('timer')" title="Abrir timer">⤢</button>
-  </div>
-</div>
-<button class="show-widget-btn" id="show-widget-btn" onclick="toggleWidget()">◉ Widget</button>
 
 <!-- PDF.JS -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -491,13 +447,13 @@ function save(){
   S.lastDate=new Date().toDateString();
   try{localStorage.setItem('hl_cfbm_2026',JSON.stringify(S));}catch(e){}
 }
-// Publica estado do timer para a extensão (chrome.storage compartilhado)
+// Publica estado via postMessage → content script bridge → chrome.storage
 function pushTimerState(){
-  if(typeof chrome==='undefined'||!chrome.storage)return;
-  chrome.storage.local.set({hl_timer:{
+  window.postMessage({
+    type:'HL_TIMER_STATE',
     secs:secs,dur:S.dur,running:running,isBreak:isBreak,
     sessStart:sessStart,ts:Date.now()
-  }});
+  },'*');
 }
 
 // ─── FORMAT ───────────────────────────────────────────────
@@ -544,22 +500,18 @@ function renderClock(){
   const ptxt=document.getElementById('phase-txt');
   if(ptxt) ptxt.textContent=isBreak?'Pausa — 5 min':'Foco — '+S.dur+' min';
 
-  const bs=document.getElementById('btn-start');
-  if(bs){
-    bs.textContent=running?'⏸':'▶';
-    bs.className='ring-play-btn'+(isBreak?' break-btn':'');
+  const pi=document.getElementById('ring-play-icon');
+  if(pi){
+    pi.textContent=running?'⏸':'▶';
+    pi.style.color=isBreak?'var(--green)':'var(--red)';
+    pi.style.opacity=running?'0.7':'0';
   }
+  const rc=document.getElementById('ring-clickable');
+  if(rc) rc.style.cursor=running?'pointer':'pointer';
 
-  // widget ring (circumference ~345 for r=55)
-  const wr=document.getElementById('w-ring');
-  if(wr){wr.style.strokeDashoffset=345*(1-pct/100);wr.style.stroke=isBreak?'var(--green)':'var(--red)';}
-  const wt=document.getElementById('w-time');
-  if(wt){wt.textContent=fmtClock(secs);wt.style.color=running&&isBreak?'var(--green)':running?'var(--red)':'var(--text)';}
-  const wl=document.getElementById('w-lbl');
-  if(wl){wl.textContent=running?(isBreak?'DESCANSO':'FOCUS'):'PAUSADO';wl.style.color=running&&isBreak?'rgba(0,230,118,.7)':running?'rgba(255,82,82,.7)':'var(--text3)';}
 
-  const wp=document.getElementById('w-btn-play');
-  if(wp) wp.textContent=running?'⏸':'▶';
+
+
   pushTimerState();
 
 }
@@ -977,40 +929,16 @@ function updateDate(){
 load();
 if(S.appTitle){const t=document.getElementById('app-title');if(t)t.textContent=S.appTitle;}
 
-// Sincroniza estado do timer com a extensão ao abrir o app
-function initFromChrome(cb){
-  if(typeof chrome==='undefined'||!chrome.storage){cb();return;}
-  chrome.storage.local.get(['hl_timer'],function(res){
-    if(res.hl_timer){
-      const t=res.hl_timer;
-      // recalcula secs baseado no tempo real decorrido
-      if(t.running&&t.sessStart){
-        const elapsed=Math.floor((Date.now()-t.sessStart)/1000);
-        const total=(t.isBreak?5:t.dur)*60;
-        secs=Math.max(0,total-elapsed);
-        if(secs>0){
-          running=true;isBreak=t.isBreak;
-          S.dur=t.dur;sessStart=t.sessStart;S._lastRecMin=0;
-          timer=setInterval(tick,1000);
-        }
-      } else {
-        secs=t.secs||S.dur*60;
-        S.dur=t.dur||S.dur;
-        isBreak=t.isBreak||false;
-      }
-    }
-    cb();
-  });
-  // Escuta comandos vindos da extensão (popup → content script → app via storage)
-  chrome.storage.onChanged.addListener(function(changes){
-    if(!changes.hl_cmd)return;
-    const cmd=changes.hl_cmd.newValue;
-    if(!cmd)return;
-    if(cmd.action==='toggle')toggleTimer();
-    if(cmd.action==='skip')skipPhase();
-    if(cmd.action==='reset')resetTimer();
-  });
-}
+// Escuta comandos vindos da extensão via postMessage (bridge no content script)
+window.addEventListener('message',function(e){
+  if(e.source!==window)return;
+  if(!e.data||e.data.type!=='HL_CMD')return;
+  const cmd=e.data.action;
+  if(cmd==='toggle')toggleTimer();
+  if(cmd==='skip')skipPhase();
+  if(cmd==='reset')resetTimer();
+});
+function initFromChrome(cb){cb();}
 
 initFromChrome(function(){
   renderClock();renderStats();renderSubjects();renderHistory();updateDate();
