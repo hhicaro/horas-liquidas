@@ -273,7 +273,10 @@ input.dark::placeholder{color:var(--text3)}
             <div class="subj-panel">
               <div class="sec-title">
                 <span>Matérias</span>
-                <span id="subj-count" style="font-size:10px;color:var(--text3)"></span>
+                <span style="display:flex;gap:8px;align-items:center">
+                  <span id="subj-count" style="font-size:10px;color:var(--text3)"></span>
+                  <button onclick="restoreDefaults()" style="font-family:var(--mono);font-size:9px;color:var(--text3);background:none;border:none;cursor:pointer;text-decoration:underline;letter-spacing:.06em" title="Restaurar matérias padrão">↺ padrão</button>
+                </span>
               </div>
               <div class="subj-list" id="subj-list"></div>
               <div class="add-row">
@@ -436,8 +439,26 @@ function load(){
       if(p.lastDate!==today){p.todayMin=0;p.todayPomos=0;}
       S={...S,...p};
     }
-  }catch(e){}
-  if(!S.subjects||!S.subjects.length) S.subjects=DEFAULT_SUBJECTS.map(s=>({...s}));
+  }catch(e){console.warn('Erro ao carregar dados:',e);}
+
+  // Garantir que subjects é um array válido com itens
+  if(!Array.isArray(S.subjects)||S.subjects.length===0){
+    S.subjects=DEFAULT_SUBJECTS.map(s=>({...s}));
+  }
+  // Garantir que cada subject tem a estrutura correta
+  S.subjects=S.subjects.map(s=>({
+    name: s.name||'Sem nome',
+    min: typeof s.min==='number'?s.min:0
+  }));
+
+  // Garantir valores numéricos
+  S.todayMin=Number(S.todayMin)||0;
+  S.totalMin=Number(S.totalMin)||0;
+  S.todayPomos=Number(S.todayPomos)||0;
+  S.totalSessions=Number(S.totalSessions)||0;
+  S.dur=Number(S.dur)||25;
+  if(!Array.isArray(S.history)) S.history=[];
+
   secs=S.dur*60;
   const mi=document.getElementById('meta-inp');
   if(mi&&S.meta) mi.value=S.meta;
@@ -735,6 +756,18 @@ function editTitle(){
   }
   inp.addEventListener('blur',commit);
   inp.addEventListener('keydown',e=>{if(e.key==='Enter')inp.blur();if(e.key==='Escape'){inp.value=cur;inp.blur();}});
+}
+
+function restoreDefaults(){
+  if(S.subjects.length>0){
+    if(!confirm('Isso vai adicionar as matérias padrão do CFBm mantendo as que você já tem. Confirmar?'))return;
+  }
+  DEFAULT_SUBJECTS.forEach(def=>{
+    if(!S.subjects.find(s=>s.name===def.name)){
+      S.subjects.push({...def});
+    }
+  });
+  save();renderSubjects();
 }
 
 function addSubj(){
